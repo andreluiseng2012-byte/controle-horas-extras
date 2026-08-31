@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Controle de Horas Extras</title>
+
+<!-- ===== Configuração de PWA (app instalável) ===== -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1677e8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Horas Extras">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+
+<style>
+  /* ===================== VARIÁVEIS DE TEMA ===================== */
+  :root{
+    --azul: #1677e8;
+    --azul-escuro: #172554;
+    --verde: #159447;
+    --verde-escuro: #166534;
+    --roxo: #7c3aed;
+    --vermelho: #dc2626;
+    --texto: #172033;
+    --texto-suave: #64748b;
+    --fundo: #eef1f6;
+    --card: #ffffff;
+    --borda: #e2e8f0;
+    --raio: 12px;
+    --sombra: 0 2px 10px rgba(23,32,51,0.08);
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    font-family:'Segoe UI', Arial, sans-serif;
+    font-size:17px;
+    color:var(--texto);
+    background:var(--fundo);
+    padding-bottom:40px;
+  }
+
+  /* Cabeçalho fixo no topo do app */
+  .cabecalho{
+    background:linear-gradient(135deg, var(--azul), var(--verde));
+    color:#fff;
+    padding:22px 16px 26px;
+    border-radius:0 0 20px 20px;
+    box-shadow:var(--sombra);
+  }
+  .cabecalho h1{
+    margin:0;
+    font-size:22px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .cabecalho p{
+    margin:6px 0 0;
+    font-size:14px;
+    opacity:.9;
+  }
+
+  .conteudo{
+    max-width:640px;
+    margin:0 auto;
+    padding:16px;
+  }
+
+  /* Seções em forma de cartão, para separar visualmente cada bloco */
+  .cartao{
+    background:var(--card);
+    border-radius:var(--raio);
+    padding:16px;
+    margin-top:16px;
+    box-shadow:var(--sombra);
+  }
+  .cartao h2{
+    font-size:16px;
+    margin:0 0 12px;
+    color:var(--azul-escuro);
+    border-bottom:1px solid var(--borda);
+    padding-bottom:8px;
+  }
+
+  label{
+    display:block;
+    font-weight:600;
+    font-size:14px;
+    margin-top:12px;
+    margin-bottom:4px;
+    color:var(--texto-suave);
+  }
+  label:first-child{ margin-top:0; }
+
+  .campo{
+    width:100%;
+    padding:11px 12px;
+    font-size:16px;
+    border:1px solid var(--borda);
+    border-radius:8px;
+    background:#fff;
+    color:var(--texto);
+  }
+  .campo:focus{
+    outline:none;
+    border-color:var(--azul);
+    box-shadow:0 0 0 3px rgba(22,119,232,0.15);
+  }
+
+  /* Campo de dinheiro com o prefixo "R$" fixo */
+  .dinheiro{
+    display:flex;
+    align-items:stretch;
+    background:#fff;
+    border:1px solid var(--borda);
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .dinheiro span{
+    padding:11px 10px;
+    font-weight:700;
+    background:#f8fafc;
+    color:var(--texto-suave);
+  }
+  .dinheiro input{
+    border:0;
+    flex:1;
+  }
+  .dinheiro input:focus{ box-shadow:none; }
+
+  /* Painel com o valor calculado de cada tipo de hora */
+  .valores{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:8px;
+  }
+  .valores .item-valor{
+    background:#f8fafc;
+    border:1px solid var(--borda);
+    border-radius:8px;
+    padding:10px;
+    text-align:center;
+  }
+  .valores .item-valor small{
+    display:block;
+    color:var(--texto-suave);
+    font-size:12px;
+    margin-bottom:2px;
+  }
+  .valores .item-valor strong{
+    font-size:15px;
+  }
+
+  .linha-checkbox{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:14px;
+    background:#fff7ed;
+    border:1px solid #fed7aa;
+    padding:10px 12px;
+    border-radius:8px;
+  }
+  .linha-checkbox input{ width:18px; height:18px; }
+  .linha-checkbox label{ margin:0; font-weight:600; color:#9a3412; }
+
+  /* ===================== REGISTRO DE PONTO ===================== */
+  .data-hoje{
+    text-align:center;
+    font-weight:700;
+    color:var(--azul-escuro);
+    margin-bottom:10px;
+    font-size:15px;
+  }
+  .grade-ponto{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .btn-ponto{
+    border:2px solid var(--borda);
+    border-radius:10px;
+    background:#f8fafc;
+    padding:14px 6px;
+    text-align:center;
+    cursor:pointer;
+    font-weight:700;
+    font-size:14px;
+    color:var(--texto);
+  }
+  .btn-ponto small{
+    display:block;
+    font-weight:400;
+    color:var(--texto-suave);
+    font-size:12px;
+    margin-top:4px;
+  }
+  .btn-ponto.feito{
+    background:#dcfce7;
+    border-color:#86efac;
+    color:var(--verde-escuro);
+  }
+  .btn-ponto.feito small{ color:var(--verde-escuro); }
+  .btn-ponto:disabled{
+    opacity:.5;
+    cursor:not-allowed;
+  }
+
+  .historico-ponto{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:4px;
+    margin-top:6px;
+    font-size:12px;
+    text-align:center;
+  }
+  .historico-ponto div{
+    background:#f8fafc;
+    border-radius:6px;
+    padding:6px 2px;
+  }
+  .historico-ponto small{
+    display:block;
+    color:var(--texto-suave);
+    font-size:10px;
+  }
+
+  .botao{
+    width:100%;
+    border:0;
+    border-radius:8px;
+    padding:13px;
+    margin-top:12px;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    transition:opacity .15s;
+    color:#fff;
+  }
+  .botao:active{ opacity:.85; }
+  .btn-adicionar{ background:var(--azul); }
+  .btn-salvar{ background:var(--verde); }
+  .btn-relatorio{ background:var(--roxo); }
+
+  #mensagem{
+    text-align:center;
+    padding:10px;
+    border-radius:8px;
+    margin-top:12px;
+    font-weight:600;
+    background:#dcfce7;
+    color:var(--verde-escuro);
+    display:none;
+  }
+
+  .lancamento{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding:12px 4px;
+    border-bottom:1px solid var(--borda);
+    font-size:14px;
+  }
+  .lancamento:last-child{ border-bottom:0; }
+  .lancamento .info{ flex:1; min-width:0; }
+  .lancamento .info b{ display:block; font-size:15px; }
+  .lancamento .info span{ color:var(--texto-suave); }
+  .tag-feriado{
+    display:inline-block;
+    background:#fee2e2;
+    color:var(--vermelho);
+    font-size:11px;
+    font-weight:700;
+    padding:1px 6px;
+    border-radius:4px;
+    margin-left:6px;
+  }
+
+  .btn-excluir, .btn-abrir{
+    color:#fff;
+    border:0;
+    border-radius:6px;
+    padding:8px 10px;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .btn-excluir{ background:var(--vermelho); }
+  .btn-abrir{ background:var(--azul); }
+
+  .vazio{
+    text-align:center;
+    color:var(--texto-suave);
+    padding:16px 0;
+    font-size:14px;
+  }
+
+  /* ===================== TELA DE RELATÓRIO ===================== */
+  .relatorio{
+    max-width:700px;
+    margin:20px auto;
+    background:#fff;
+    padding:24px;
+    border-radius:var(--raio);
+  }
+  .relatorio-cabecalho{
+    text-align:center;
+    border-bottom:3px solid var(--azul-escuro);
+    padding-bottom:14px;
+    margin-bottom:16px;
+  }
+  .relatorio-cabecalho h1{
+    color:var(--azul-escuro);
+    font-size:20px;
+    margin:0 0 4px;
+  }
+  .resumo-grade{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+    margin:16px 0;
+  }
+  .resumo-grade div{
+    text-align:center;
+    background:#f1f5f9;
+    padding:12px 6px;
+    border-radius:8px;
+    font-size:13px;
+  }
+  .tabela-relatorio{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:8px;
+    font-size:14px;
+  }
+  .tabela-relatorio th{
+    background:var(--azul-escuro);
+    color:#fff;
+    padding:8px;
+  }
+  .tabela-relatorio td{
+    text-align:center;
+    padding:8px;
+    border-bottom:1px solid var(--borda);
+  }
+  .total-geral{
+    background:var(--verde-escuro);
+    color:#fff;
+    text-align:center;
+    padding:18px;
+    border-radius:8px;
+    margin-top:16px;
+  }
+  .total-geral strong{
+    display:block;
+    font-size:28px;
+    margin-top:6px;
+  }
+  .btn-voltar{
+    width:100%;
+    padding:12px;
+    border:0;
+    border-radius:8px;
+    background:#475569;
+    color:#fff;
+    font-weight:700;
+    margin-bottom:14px;
+    cursor:pointer;
+  }
+
+  @media (max-width:480px){
+    .resumo-grade{ grid-template-columns:1fr 1fr; }
+  }
+  @media print{
+    .no-print{ display:none !important; }
+    body{ background:#fff; }
+    .relatorio{ padding:0; margin:0; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <div class="cabecalho">
+    <h1>⏱ Controle de Horas Extras</h1>
+    <p>Registre, calcule e gere relatórios das suas horas extras</p>
+  </div>
+
+  <div class="conteudo">
+
+    <!-- ===== Dados do funcionário ===== -->
+    <div class="cartao">
+      <h2>Dados do funcionário</h2>
+
+      <label for="nome">Nome</label>
+      <input class="campo" id="nome" placeholder="Digite seu nome">
+
+      <label for="salario">Salário</label>
+      <div class="dinheiro">
+        <span>R$</span>
+        <input class="campo" id="salario" inputmode="decimal" placeholder="0,00">
+      </div>
+
+      <div class="valores">
+        <div class="item-valor"><small>Hora normal</small><strong id="valorNormal">R$ 0,00</strong></div>
+        <div class="item-valor"><small>Hora 50%</small><strong id="valor50">R$ 0,00</strong></div>
+        <div class="item-valor"><small>Hora 75%</small><strong id="valor75">R$ 0,00</strong></div>
+        <div class="item-valor"><small>Hora 100%</small><strong id="valor100">R$ 0,00</strong></div>
+      </div>
+    </div>
+
+    <!-- ===== Horário de trabalho configurado ===== -->
+    <div class="cartao">
+      <h2>Horário de trabalho</h2>
+      <label for="horaEntradaConfig">Entrada</label>
+      <input class="campo" type="time" id="horaEntradaConfig">
+      <label for="horaSaidaAlmocoConfig">Saída para o almoço</label>
+      <input class="campo" type="time" id="horaSaidaAlmocoConfig">
+      <label for="horaVoltaAlmocoConfig">Volta do almoço</label>
+      <input class="campo" type="time" id="horaVoltaAlmocoConfig">
+      <label for="horaSaidaConfig">Saída</label>
+      <input class="campo" type="time" id="horaSaidaConfig">
+    </div>
+
+    <!-- ===== Registro de ponto do dia ===== -->
+    <div class="cartao">
+      <h2>Registro de ponto</h2>
+      <div class="data-hoje" id="dataHojeExibicao"></div>
+
+      <div class="linha-checkbox">
+        <input type="checkbox" id="feriadoHoje">
+        <label for="feriadoHoje">Hoje é feriado (adicional de 100%)</label>
+      </div>
+
+      <div class="grade-ponto">
+        <button class="btn-ponto" id="btnEntrada" onclick="baterPonto('entrada')">Entrada</button>
+        <button class="btn-ponto" id="btnSaidaAlmoco" onclick="baterPonto('saidaAlmoco')">Saída Almoço</button>
+        <button class="btn-ponto" id="btnVoltaAlmoco" onclick="baterPonto('voltaAlmoco')">Volta Almoço</button>
+        <button class="btn-ponto" id="btnSaida" onclick="baterPonto('saida')">Saída</button>
+      </div>
+    </div>
+
+    <!-- ===== Histórico de pontos registrados ===== -->
+    <div class="cartao">
+      <h2>Histórico de ponto</h2>
+      <div id="listaHistoricoPonto"></div>
+    </div>
+
+    <!-- ===== Período de apuração ===== -->
+    <div class="cartao">
+      <h2>Período de apuração</h2>
+      <label for="dataInicio">Início do período</label>
+      <input class="campo" type="date" id="dataInicio">
+      <label for="dataFim">Fim do período</label>
+      <input class="campo" type="date" id="dataFim">
+    </div>
+
+    <!-- ===== Novo lançamento ===== -->
+    <div class="cartao">
+      <h2>Novo lançamento</h2>
+
+      <label for="dataHoraExtra">Data da hora extra</label>
+      <input class="campo" type="date" id="dataHoraExtra">
+
+      <div class="linha-checkbox">
+        <input type="checkbox" id="ehFeriado">
+        <label for="ehFeriado">É feriado (adicional de 100%)</label>
+      </div>
+
+      <label for="quantidadeHoras">Quantidade de horas</label>
+      <input class="campo" type="number" id="quantidadeHoras" min="0" step="0.01" placeholder="Ex.: 2">
+
+      <label for="percentualAdicional">Adicional (%)</label>
+      <input class="campo" type="number" id="percentualAdicional" value="50">
+
+      <button class="botao btn-adicionar" onclick="adicionarLancamento()">+ Adicionar hora extra</button>
+      <button class="botao btn-salvar" onclick="salvarLancamentos()">Salvar lançamentos</button>
+      <button class="botao btn-relatorio" onclick="gerarRelatorio()">Gerar relatório</button>
+
+      <div id="mensagem"></div>
+    </div>
+
+    <!-- ===== Lista de lançamentos do período selecionado ===== -->
+    <div class="cartao">
+      <h2>Lançamentos do período</h2>
+      <div id="listaLancamentos"></div>
+    </div>
+
+    <!-- ===== Relatórios já gerados e salvos ===== -->
+    <div class="cartao">
+      <h2>Relatórios salvos</h2>
+      <div id="listaRelatorios"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONTROLE DE HORAS EXTRAS
+   Aplicativo single-file (HTML + CSS + JS) que roda 100% no
+   navegador e guarda os dados no localStorage do dispositivo.
+   ============================================================ */
+
+// Atalho para buscar elementos por id (evita repetir document.getElementById)
+const $ = (id) => document.getElementById(id);
+
+// Chaves usadas para guardar os dados no localStorage
+const CHAVE_LANCAMENTOS    = "horas_extras";
+const CHAVE_RELATORIOS     = "relatorios";
+const CHAVE_HORARIO_CONFIG = "horario_config";
+const CHAVE_PONTOS         = "registros_ponto";
+
+// Carrega os dados salvos anteriormente (ou começa com listas vazias)
+let lancamentos = JSON.parse(localStorage.getItem(CHAVE_LANCAMENTOS) || "[]");
+let relatorios  = JSON.parse(localStorage.getItem(CHAVE_RELATORIOS)  || "[]");
+
+// Configuração do horário de trabalho: { entrada, saidaAlmoco, voltaAlmoco, saida }
+let horarioConfig = JSON.parse(localStorage.getItem(CHAVE_HORARIO_CONFIG) || "{}");
+
+// Registros de ponto batido, organizados por data:
+// { "2026-08-30": { entrada, saidaAlmoco, voltaAlmoco, saida, feriado } }
+let pontos = JSON.parse(localStorage.getItem(CHAVE_PONTOS) || "{}");
+
+// Ordem em que os pontos devem ser batidos ao longo do dia
+const ORDEM_PONTOS = ["entrada", "saidaAlmoco", "voltaAlmoco", "saida"];
+const NOME_PONTO = {
+  entrada: "Entrada",
+  saidaAlmoco: "Saída Almoço",
+  voltaAlmoco: "Volta Almoço",
+  saida: "Saída"
+};
+
+/**
+ * Formata um número como moeda brasileira (R$ 0,00).
+ */
+function formatarMoeda(valor) {
+  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+/**
+ * Converte um número decimal de horas (ex.: 2.5) em texto
+ * legível no formato "2h 30min".
+ */
+function formatarHoras(valorDecimal) {
+  let h = Math.floor(valorDecimal);
+  let m = Math.round((valorDecimal - h) * 60);
+  if (m === 60) { h++; m = 0; }
+  return m ? `${h}h ${m}min` : `${h}h`;
+}
+
+/**
+ * Retorna o período [início, fim] escolhido pelo usuário.
+ * Se algum campo estiver vazio, usa um intervalo bem amplo
+ * para não excluir lançamentos por engano.
+ */
+function obterPeriodo() {
+  const inicio = $("dataInicio").value || "0000-01-01";
+  const fim    = $("dataFim").value    || "9999-12-31";
+  return [inicio, fim];
+}
+
+/**
+ * Converte uma data no formato "AAAA-MM-DD" para "DD/MM/AAAA".
+ */
+function formatarDataBR(dataISO) {
+  return dataISO.split("-").reverse().join("/");
+}
+
+/**
+ * Retorna a data de hoje no formato "AAAA-MM-DD", usando o
+ * horário local do aparelho (evita o problema de fuso horário
+ * que ocorreria ao usar new Date().toISOString()).
+ */
+function obterDataHojeISO() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
+/**
+ * Retorna o horário atual no formato "HH:MM".
+ */
+function obterHoraAtualHHMM() {
+  const agora = new Date();
+  const h = String(agora.getHours()).padStart(2, "0");
+  const m = String(agora.getMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
+}
+
+/**
+ * Converte um horário "HH:MM" na quantidade de minutos
+ * desde a meia-noite, para facilitar comparações e cálculos.
+ */
+function minutosDesdeMeiaNoite(horaHHMM) {
+  const [h, m] = horaHHMM.split(":").map(Number);
+  return h * 60 + m;
+}
+
+// ------------------------------------------------------------
+// VALIDAÇÃO E FORMATAÇÃO DE CAMPOS ENQUANTO O USUÁRIO DIGITA
+// ------------------------------------------------------------
+
+// Impede que números ou símbolos sejam digitados no campo Nome
+$("nome").oninput = () => {
+  $("nome").value = $("nome").value.replace(/[^a-zA-ZÀ-ÿ\s]/g, "");
+};
+
+// Formata o campo Salário como dinheiro (##,##) enquanto o usuário digita
+$("salario").oninput = () => {
+  const somenteNumeros = $("salario").value.replace(/\D/g, "");
+  $("salario").value = somenteNumeros
+    ? (Number(somenteNumeros) / 100).toFixed(2).replace(".", ",")
+    : "";
+  calcularValoresHora();
+  atualizarListaLancamentos();
+};
+
+// Sempre que o período mudar, a lista de lançamentos é atualizada
+$("dataInicio").onchange = atualizarListaLancamentos;
+$("dataFim").onchange    = atualizarListaLancamentos;
+
+/**
+ * Sugere automaticamente o percentual de adicional com base
+ * no dia da semana da data escolhida:
+ *   - Domingo ou feriado marcado  -> 100%
+ *   - Sábado                      -> 75%
+ *   - Dias úteis                  -> 50%
+ * O usuário ainda pode ajustar manualmente o valor sugerido.
+ */
+function sugerirAdicional() {
+  const data = $("dataHoraExtra").value;
+  if (!data) return;
+
+  const diaSemana = new Date(data + "T12:00:00").getDay(); // 0 = domingo, 6 = sábado
+
+  if ($("ehFeriado").checked) {
+    $("percentualAdicional").value = 100;
+  } else if (diaSemana === 0) {
+    $("percentualAdicional").value = 100;
+  } else if (diaSemana === 6) {
+    $("percentualAdicional").value = 75;
+  } else {
+    $("percentualAdicional").value = 50;
+  }
+}
+$("dataHoraExtra").onchange = sugerirAdicional;
+$("ehFeriado").onchange     = sugerirAdicional;
+
+/**
+ * Recalcula e exibe o valor da hora normal e das horas com
+ * adicional de 50%, 75% e 100%, com base no salário informado.
+ * A jornada mensal usada como referência é de 220 horas.
+ */
+function calcularValoresHora() {
+  const JORNADA_MENSAL = 220;
+  const salario = Number($("salario").value.replace(",", ".")) || 0;
+  const valorHoraNormal = salario / JORNADA_MENSAL;
+
+  $("valorNormal").textContent = formatarMoeda(valorHoraNormal);
+  $("valor50").textContent  = formatarMoeda(valorHoraNormal * 1.50);
+  $("valor75").textContent  = formatarMoeda(valorHoraNormal * 1.75);
+  $("valor100").textContent = formatarMoeda(valorHoraNormal * 2.00);
+}
+
+// ------------------------------------------------------------
+// LANÇAMENTOS (adicionar, listar, excluir, salvar)
+// ------------------------------------------------------------
+
+/**
+ * Valida os campos do formulário e adiciona um novo lançamento
+ * de hora extra à lista, desde que a data esteja dentro do
+ * período de apuração selecionado.
+ */
+function adicionarLancamento() {
+  const data = $("dataHoraExtra").value;
+  const horas = Number($("quantidadeHoras").value);
+  const adicional = Number($("percentualAdicional").value);
+
+  if (!data || !horas) {
+    alert("Informe a data e as horas.");
+    return;
+  }
+
+  const [inicio, fim] = obterPeriodo();
+  if (data < inicio || data > fim) {
+    alert("A data está fora do período selecionado.");
+    return;
+  }
+
+  lancamentos.push({
+    d: data,
+    h: horas,
+    a: adicional,
+    feriado: $("ehFeriado").checked
+  });
+
+  salvarLancamentos(false);       // salva sem exibir a mensagem de confirmação
+  atualizarListaLancamentos();
+  $("quantidadeHoras").value = "";
+}
+
+/**
+ * Renderiza a lista de lançamentos que pertencem ao período
+ * atualmente selecionado, já ordenados por data, mostrando o
+ * valor calculado de cada um.
+ */
+function atualizarListaLancamentos() {
+  const [inicio, fim] = obterPeriodo();
+  const salario = Number($("salario").value.replace(",", ".")) || 0;
+  const valorHoraNormal = salario / 220;
+
+  const lancamentosDoPeriodo = lancamentos
+    .filter(l => l.d >= inicio && l.d <= fim)
+    .sort((a, b) => a.d.localeCompare(b.d));
+
+  $("listaLancamentos").innerHTML = lancamentosDoPeriodo.length
+    ? lancamentosDoPeriodo.map(l => {
+        const indiceOriginal = lancamentos.indexOf(l);
+        const valor = l.h * valorHoraNormal * (1 + l.a / 100);
+        return `
+          <div class="lancamento">
+            <div class="info">
+              <b>${formatarDataBR(l.d)} ${l.feriado ? '<span class="tag-feriado">FERIADO</span>' : ""}</b>
+              <span>${formatarHoras(l.h)} · ${l.a}% · ${formatarMoeda(valor)}</span>
+            </div>
+            <button class="btn-excluir" onclick="excluirLancamento(${indiceOriginal})">Excluir</button>
+          </div>`;
+      }).join("")
+    : '<p class="vazio">Nenhum lançamento no período.</p>';
+
+  atualizarListaRelatorios();
+}
+
+/**
+ * Remove um lançamento pela posição dele no array original
+ * e atualiza a lista salva e exibida em tela.
+ */
+function excluirLancamento(indice) {
+  lancamentos.splice(indice, 1);
+  salvarLancamentos(false);
+  atualizarListaLancamentos();
+}
+
+/**
+ * Salva no localStorage os lançamentos, o nome e o salário
+ * digitados. Por padrão exibe uma mensagem de confirmação
+ * (pode ser chamada com mostrarMensagem=false para salvar
+ * silenciosamente, como acontece ao adicionar/excluir um item).
+ */
+function salvarLancamentos(mostrarMensagem = true) {
+  localStorage.setItem(CHAVE_LANCAMENTOS, JSON.stringify(lancamentos));
+  localStorage.setItem("nome", $("nome").value);
+  localStorage.setItem("salario", $("salario").value);
+  if (mostrarMensagem) exibirMensagem("Lançamentos salvos!");
+}
+
+/**
+ * Exibe uma mensagem de confirmação temporária no topo do
+ * formulário (some sozinha depois de 2 segundos).
+ */
+function exibirMensagem(texto) {
+  const elemento = $("mensagem");
+  elemento.textContent = texto;
+  elemento.style.display = "block";
+  setTimeout(() => { elemento.style.display = "none"; }, 2000);
+}
+
+// ------------------------------------------------------------
+// HORÁRIO DE TRABALHO E REGISTRO DE PONTO
+// ------------------------------------------------------------
+
+/**
+ * Salva no localStorage o horário de trabalho configurado
+ * (entrada, saída para o almoço, volta do almoço e saída).
+ */
+function salvarHorarioConfig() {
+  horarioConfig = {
+    entrada: $("horaEntradaConfig").value,
+    saidaAlmoco: $("horaSaidaAlmocoConfig").value,
+    voltaAlmoco: $("horaVoltaAlmocoConfig").value,
+    saida: $("horaSaidaConfig").value
+  };
+  localStorage.setItem(CHAVE_HORARIO_CONFIG, JSON.stringify(horarioConfig));
+}
+
+// Sempre que qualquer horário configurado for alterado, salva automaticamente
+["horaEntradaConfig", "horaSaidaAlmocoConfig", "horaVoltaAlmocoConfig", "horaSaidaConfig"]
+  .forEach(id => { $(id).onchange = salvarHorarioConfig; });
+
+/**
+ * Registra o horário atual para o tipo de ponto informado
+ * ("entrada", "saidaAlmoco", "voltaAlmoco" ou "saida") no dia
+ * de hoje, respeitando a ordem correta de batida.
+ * Ao bater a "saída", verifica automaticamente se houve hora
+ * extra (saída depois do horário configurado) e, se houver,
+ * já lança essa hora extra na lista de lançamentos.
+ */
+function baterPonto(tipo) {
+  const hoje = obterDataHojeISO();
+  const registroHoje = pontos[hoje] || {};
+
+  // Descobre qual é o próximo ponto esperado (o primeiro ainda não batido)
+  const proximoEsperado = ORDEM_PONTOS.find(t => !registroHoje[t]);
+  if (tipo !== proximoEsperado) {
+    alert(`Bata os pontos em ordem. O próximo é: ${NOME_PONTO[proximoEsperado] || "todos já batidos hoje"}.`);
+    return;
+  }
+
+  // Na primeira batida do dia, trava a marcação de feriado para não mudar no meio do dia
+  if (tipo === "entrada") {
+    registroHoje.feriado = $("feriadoHoje").checked;
+  }
+
+  registroHoje[tipo] = obterHoraAtualHHMM();
+  pontos[hoje] = registroHoje;
+  localStorage.setItem(CHAVE_PONTOS, JSON.stringify(pontos));
+
+  // Ao bater a saída, verifica se houve hora extra e lança automaticamente
+  if (tipo === "saida") {
+    calcularHoraExtraAutomatica(hoje, registroHoje);
+  }
+
+  atualizarPainelPonto();
+}
+
+/**
+ * Compara o horário de saída batido com o horário de saída
+ * configurado. Se a saída ocorreu depois do horário configurado,
+ * calcula a quantidade de horas extras e adiciona automaticamente
+ * um lançamento (mesma lista usada no lançamento manual).
+ */
+function calcularHoraExtraAutomatica(dataISO, registroHoje) {
+  const saidaConfigurada = horarioConfig.saida;
+  if (!saidaConfigurada) return; // sem horário configurado, não há como comparar
+
+  const minutosSaidaReal = minutosDesdeMeiaNoite(registroHoje.saida);
+  const minutosSaidaConfig = minutosDesdeMeiaNoite(saidaConfigurada);
+  const minutosExtras = minutosSaidaReal - minutosSaidaConfig;
+
+  if (minutosExtras <= 0) return; // saiu no horário ou mais cedo, nada a lançar
+
+  const horasExtras = minutosExtras / 60;
+  const diaSemana = new Date(dataISO + "T12:00:00").getDay(); // 0 = domingo, 6 = sábado
+
+  let percentual;
+  if (registroHoje.feriado) percentual = 100;
+  else if (diaSemana === 0) percentual = 100;
+  else if (diaSemana === 6) percentual = 75;
+  else percentual = 50;
+
+  lancamentos.push({
+    d: dataISO,
+    h: horasExtras,
+    a: percentual,
+    feriado: registroHoje.feriado
+  });
+  salvarLancamentos(false);
+  atualizarListaLancamentos();
+
+  exibirMensagem(`Hora extra detectada: ${formatarHoras(horasExtras)} lançada automaticamente!`);
+}
+
+/**
+ * Atualiza a exibição dos 4 botões de ponto do dia (mostrando
+ * o horário já batido e desabilitando o que ainda não pode ser
+ * batido, pois depende do anterior) e redesenha o histórico.
+ */
+function atualizarPainelPonto() {
+  $("dataHojeExibicao").textContent = "Hoje: " + formatarDataBR(obterDataHojeISO());
+
+  const hoje = obterDataHojeISO();
+  const registroHoje = pontos[hoje] || {};
+  const proximoEsperado = ORDEM_PONTOS.find(t => !registroHoje[t]);
+
+  // Trava o checkbox de feriado assim que a entrada já foi batida hoje
+  $("feriadoHoje").disabled = !!registroHoje.entrada;
+  $("feriadoHoje").checked = registroHoje.feriado || $("feriadoHoje").checked;
+
+  const idsBotao = {
+    entrada: "btnEntrada",
+    saidaAlmoco: "btnSaidaAlmoco",
+    voltaAlmoco: "btnVoltaAlmoco",
+    saida: "btnSaida"
+  };
+
+  ORDEM_PONTOS.forEach(tipo => {
+    const botao = $(idsBotao[tipo]);
+    const horaBatida = registroHoje[tipo];
+
+    if (horaBatida) {
+      botao.classList.add("feito");
+      botao.disabled = true;
+      botao.innerHTML = `${NOME_PONTO[tipo]}<small>${horaBatida}</small>`;
+    } else {
+      botao.classList.remove("feito");
+      botao.disabled = tipo !== proximoEsperado;
+      botao.innerHTML = `${NOME_PONTO[tipo]}<small>pendente</small>`;
+    }
+  });
+
+  atualizarHistoricoPonto();
+}
+
+/**
+ * Renderiza o histórico de dias com ponto registrado,
+ * do mais recente para o mais antigo, com opção de excluir
+ * o registro de um dia (não afeta lançamentos já lançados).
+ */
+function atualizarHistoricoPonto() {
+  const datas = Object.keys(pontos).sort((a, b) => b.localeCompare(a));
+
+  $("listaHistoricoPonto").innerHTML = datas.length
+    ? datas.map(data => {
+        const r = pontos[data];
+        return `
+          <div class="lancamento" style="flex-direction:column; align-items:stretch;">
+            <div class="info">
+              <b>${formatarDataBR(data)} ${r.feriado ? '<span class="tag-feriado">FERIADO</span>' : ""}</b>
+            </div>
+            <div class="historico-ponto">
+              <div><small>Entrada</small>${r.entrada || "—"}</div>
+              <div><small>Saída Almoço</small>${r.saidaAlmoco || "—"}</div>
+              <div><small>Volta Almoço</small>${r.voltaAlmoco || "—"}</div>
+              <div><small>Saída</small>${r.saida || "—"}</div>
+            </div>
+            <button class="btn-excluir" style="margin-top:8px" onclick="excluirRegistroPonto('${data}')">Excluir registro do dia</button>
+          </div>`;
+      }).join("")
+    : '<p class="vazio">Nenhum ponto registrado ainda.</p>';
+}
+
+/**
+ * Remove o registro de ponto de um dia específico do histórico.
+ * Não remove lançamentos de hora extra já criados a partir dele.
+ */
+function excluirRegistroPonto(data) {
+  delete pontos[data];
+  localStorage.setItem(CHAVE_PONTOS, JSON.stringify(pontos));
+  atualizarPainelPonto();
+}
+
+// ------------------------------------------------------------
+// RELATÓRIOS
+// ------------------------------------------------------------
+
+/**
+ * Gera um relatório consolidado do período selecionado,
+ * salva esse relatório na lista de relatórios e abre a
+ * tela de visualização/impressão dele.
+ */
+function gerarRelatorio() {
+  const [inicio, fim] = obterPeriodo();
+  const lancamentosDoPeriodo = lancamentos
+    .filter(l => l.d >= inicio && l.d <= fim)
+    .sort((a, b) => a.d.localeCompare(b.d));
+
+  if (!lancamentosDoPeriodo.length) {
+    alert("Não há lançamentos neste período.");
+    return;
+  }
+
+  const salario = Number($("salario").value.replace(",", ".")) || 0;
+  const valorHoraNormal = salario / 220;
+  const totalGeral = lancamentosDoPeriodo.reduce(
+    (soma, l) => soma + l.h * valorHoraNormal * (1 + l.a / 100), 0
+  );
+
+  const relatorio = {
+    id: Date.now(),
+    nome: $("nome").value,
+    salario,
+    inicio,
+    fim,
+    lancamentos: lancamentosDoPeriodo.map(l => ({ ...l })),
+    total: totalGeral
+  };
+
+  relatorios.push(relatorio);
+  localStorage.setItem(CHAVE_RELATORIOS, JSON.stringify(relatorios));
+  exibirMensagem("Relatório salvo com sucesso!");
+  abrirRelatorio(relatorio.id);
+}
+
+/**
+ * Renderiza a lista de relatórios já gerados anteriormente,
+ * com opção de abrir novamente ou excluir cada um.
+ */
+function atualizarListaRelatorios() {
+  $("listaRelatorios").innerHTML = relatorios.length
+    ? relatorios.slice().reverse().map(r => `
+        <div class="lancamento">
+          <div class="info">
+            <b>${formatarDataBR(r.inicio)} até ${formatarDataBR(r.fim)}</b>
+            <span>${formatarMoeda(r.total)}</span>
+          </div>
+          <button class="btn-abrir" onclick="abrirRelatorio(${r.id})">Abrir</button>
+          <button class="btn-excluir" onclick="excluirRelatorio(${r.id})">Excluir</button>
+        </div>`).join("")
+    : '<p class="vazio">Nenhum relatório salvo.</p>';
+}
+
+/**
+ * Remove um relatório salvo pelo seu identificador (id).
+ */
+function excluirRelatorio(id) {
+  relatorios = relatorios.filter(r => r.id !== id);
+  localStorage.setItem(CHAVE_RELATORIOS, JSON.stringify(relatorios));
+  atualizarListaRelatorios();
+}
+
+/**
+ * Substitui o conteúdo da página pela visualização em tela
+ * cheia de um relatório específico, pronta para impressão/PDF.
+ * O botão "Voltar" recarrega a página para retornar ao app.
+ */
+function abrirRelatorio(id) {
+  const relatorio = relatorios.find(r => r.id === id);
+  if (!relatorio) return;
+
+  const valorHoraNormal = relatorio.salario / 220;
+  let totalHoras50 = 0, totalHoras75 = 0, totalHoras100 = 0, totalValor = 0;
+
+  const linhasTabela = relatorio.lancamentos
+    .sort((a, b) => a.d.localeCompare(b.d))
+    .map(l => {
+      const valor = l.h * valorHoraNormal * (1 + l.a / 100);
+      totalValor += valor;
+      if (l.a === 50)  totalHoras50  += l.h;
+      if (l.a === 75)  totalHoras75  += l.h;
+      if (l.a === 100) totalHoras100 += l.h;
+      return `
+        <tr>
+          <td>${formatarDataBR(l.d)}</td>
+          <td>${formatarHoras(l.h)}</td>
+          <td>${l.a}%${l.feriado ? " Feriado" : ""}</td>
+          <td>${formatarMoeda(valor)}</td>
+        </tr>`;
+    }).join("");
+
+  const totalHoras = totalHoras50 + totalHoras75 + totalHoras100;
+
+  document.body.innerHTML = `
+    <button class="btn-voltar no-print" onclick="location.reload()">← Voltar</button>
+    <div class="relatorio">
+      <div class="relatorio-cabecalho">
+        <h1>CONTROLE DE HORAS EXTRAS</h1>
+        <b>Relatório de apuração</b>
+      </div>
+      <p><b>Nome:</b> ${relatorio.nome || "—"}</p>
+      <p><b>Salário:</b> ${formatarMoeda(relatorio.salario)}</p>
+      <p><b>Período:</b> ${formatarDataBR(relatorio.inicio)} até ${formatarDataBR(relatorio.fim)}</p>
+      <p><b>Jornada mensal de referência:</b> 220 horas</p>
+
+      <div class="resumo-grade">
+        <div><b>50%</b><br>${formatarHoras(totalHoras50)}</div>
+        <div><b>75%</b><br>${formatarHoras(totalHoras75)}</div>
+        <div><b>100%</b><br>${formatarHoras(totalHoras100)}</div>
+        <div><b>Total</b><br>${formatarHoras(totalHoras)}</div>
+      </div>
+
+      <h2>Lançamentos</h2>
+      <table class="tabela-relatorio">
+        <tr><th>Data</th><th>Horas</th><th>Adicional</th><th>Valor</th></tr>
+        ${linhasTabela}
+      </table>
+
+      <div class="total-geral">
+        <b>TOTAL DAS HORAS EXTRAS</b>
+        <strong>${formatarMoeda(totalValor)}</strong>
+      </div>
+    </div>`;
+}
+
+// ------------------------------------------------------------
+// INICIALIZAÇÃO DO APP
+// ------------------------------------------------------------
+
+// Recupera nome e salário digitados da última vez que o app foi usado
+$("nome").value = localStorage.getItem("nome") || "";
+$("salario").value = localStorage.getItem("salario") || "";
+
+// Recupera o horário de trabalho configurado anteriormente
+$("horaEntradaConfig").value = horarioConfig.entrada || "";
+$("horaSaidaAlmocoConfig").value = horarioConfig.saidaAlmoco || "";
+$("horaVoltaAlmocoConfig").value = horarioConfig.voltaAlmoco || "";
+$("horaSaidaConfig").value = horarioConfig.saida || "";
+
+calcularValoresHora();
+atualizarListaLancamentos();
+atualizarPainelPonto();
+
+// Registra o Service Worker, responsável por permitir que o
+// app funcione offline e seja instalado no celular (PWA).
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(erro => {
+      console.log("Falha ao registrar o service worker:", erro);
+    });
+  });
+}
+</script>
+</body>
+</html>
